@@ -46,6 +46,11 @@ flags.DEFINE_string(
     "output_dir", None,
     "The output directory where the model checkpoints will be written.")
 
+flags.DEFINE_string(
+    "export_dir", None,
+    "The directory where the model will be exported if do_serve is enabled")
+
+
 ## Other parameters
 flags.DEFINE_string("train_file", None,
                     "SQuAD json for training. E.g., train-v1.1.json")
@@ -1134,6 +1139,7 @@ def main(_):
     validate_flags_or_throw(bert_config)
 
     tf.gfile.MakeDirs(FLAGS.output_dir)
+    tf.gfile.MakeDirs(FLAGS.export_dir)
 
     tokenizer = tokenization.FullTokenizer(
         vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
@@ -1295,7 +1301,7 @@ def main(_):
                 return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
         estimator._export_to_tpu = False  # this is important
-        path = estimator.export_savedmodel('export_t', serving_input_fn)
+        path = estimator.export_savedmodel(FLAGS.export_dir, serving_input_fn)
         print(path)
 
 
@@ -1305,3 +1311,33 @@ if __name__ == "__main__":
     flags.mark_flag_as_required("bert_config_file")
     flags.mark_flag_as_required("output_dir")
     tf.app.run()
+
+
+"""
+saved_model_cli run --dir export_t/1551206977 --tag_set serve --signature_def serving_default --input_examples 'examples=[{"input_ids":np.zeros((384), dtype=int).tolist(),"input_mask":np.zeros((384), dtype=int).tolist(),"unique_ids":[0],"segment_ids":np.zeros((384), dtype=int).tolist()}]'
+
+saved_model_cli show --all --dir export_t/1551206977/
+
+MetaGraphDef with tag-set: 'serve' contains the following SignatureDefs:
+
+signature_def['serving_default']:
+  The given SavedModel SignatureDef contains the following input(s):
+    inputs['examples'] tensor_info:
+        dtype: DT_STRING
+        shape: (-1)
+        name: foo/input_example_tensor:0
+  The given SavedModel SignatureDef contains the following output(s):
+    outputs['end_logits'] tensor_info:
+        dtype: DT_FLOAT
+        shape: (-1, 384)
+        name: unstack:1
+    outputs['start_logits'] tensor_info:
+        dtype: DT_FLOAT
+        shape: (-1, 384)
+        name: unstack:0
+    outputs['unique_ids'] tensor_info:
+        dtype: DT_INT64
+        shape: (-1)
+        name: foo/ParseExample/ParseExample:3
+  Method name is: tensorflow/serving/predict
+"""
