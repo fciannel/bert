@@ -746,6 +746,9 @@ RawResult = collections.namedtuple("RawResult",
                                    ["unique_id", "start_logits", "end_logits"])
 
 
+
+
+
 def write_predictions(all_examples, all_features, all_results, n_best_size,
                       max_answer_length, do_lower_case, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file):
@@ -1102,6 +1105,13 @@ class FeatureWriter(object):
         self._writer.close()
 
 
+
+
+
+
+
+
+
 def validate_flags_or_throw(bert_config):
     """Validate the input FLAGS or throw an exception."""
     tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
@@ -1303,8 +1313,6 @@ def main(_):
         estimator._export_to_tpu = False  # this is important
         path = estimator.export_savedmodel(FLAGS.export_dir, serving_input_fn)
         print(path)
-
-
 
 if __name__ == "__main__":
     flags.mark_flag_as_required("vocab_file")
